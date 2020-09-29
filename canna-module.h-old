@@ -1,0 +1,301 @@
+static emacs_value VCANNA;
+static emacs_value Vcanna_coding_system;
+static emacs_value Vcanna_henkan_string;
+static emacs_value Vcanna_ichiran_string;
+static emacs_value Vcanna_kakutei_romaji;
+static emacs_value Vcanna_kakutei_string;
+static emacs_value Vcanna_kakutei_yomi;
+static emacs_value Vcanna_mode_string;
+static emacs_value canna_fn_AdjustBunsetsu;
+static emacs_value canna_fn_AlphaMode;
+static emacs_value canna_fn_Backward;
+static emacs_value canna_fn_BaseEisu;
+static emacs_value canna_fn_BaseHankaku;
+static emacs_value canna_fn_BaseHenkan;
+static emacs_value canna_fn_BaseHiraKataToggle;
+static emacs_value canna_fn_BaseHiragana;
+static emacs_value canna_fn_BaseKakutei;
+static emacs_value canna_fn_BaseKakuteiHenkanToggle;
+static emacs_value canna_fn_BaseKana;
+static emacs_value canna_fn_BaseKanaEisuToggle;
+static emacs_value canna_fn_BaseKatakana;
+static emacs_value canna_fn_BaseRotateBackward;
+static emacs_value canna_fn_BaseRotateForward;
+static emacs_value canna_fn_BaseZenHanToggle;
+static emacs_value canna_fn_BaseZenkaku;
+static emacs_value canna_fn_BeginningOfLine;
+static emacs_value canna_fn_BubunMuhenkan;
+static emacs_value canna_fn_BushuMode;
+static emacs_value canna_fn_Capitalize;
+static emacs_value canna_fn_ConvertAsBushu;
+static emacs_value canna_fn_ConvertAsHex;
+static emacs_value canna_fn_DeleteNext;
+static emacs_value canna_fn_DeletePrevious;
+static emacs_value canna_fn_EndOfLine;
+static emacs_value canna_fn_Extend;
+static emacs_value canna_fn_ExtendMode;
+static emacs_value canna_fn_Forward;
+static emacs_value canna_fn_FunctionalInsert;
+static emacs_value canna_fn_Hankaku;
+static emacs_value canna_fn_Henkan;
+static emacs_value canna_fn_HenkanNyuryokuMode;
+static emacs_value canna_fn_HexMode;
+static emacs_value canna_fn_Hiragana;
+static emacs_value canna_fn_JapaneseMode;
+static emacs_value canna_fn_Kakutei;
+static emacs_value canna_fn_Katakana;
+static emacs_value canna_fn_KigouMode;
+static emacs_value canna_fn_KillToEndOfLine;
+static emacs_value canna_fn_KouhoIchiran;
+static emacs_value canna_fn_Mark;
+static emacs_value canna_fn_Next;
+static emacs_value canna_fn_Prev;
+static emacs_value canna_fn_Quit;
+static emacs_value canna_fn_QuotedInsert;
+static emacs_value canna_fn_Romaji;
+static emacs_value canna_fn_SelfInsert;
+static emacs_value canna_fn_Shrink;
+static emacs_value canna_fn_TemporalMode;
+static emacs_value canna_fn_ToLower;
+static emacs_value canna_fn_ToUpper;
+static emacs_value canna_fn_Touroku;
+static emacs_value canna_fn_Zenkaku;
+static emacs_value canna_henkan_length;
+static emacs_value canna_henkan_revLen;
+static emacs_value canna_henkan_revPos;
+static emacs_value canna_ichiran_length;
+static emacs_value canna_ichiran_revLen;
+static emacs_value canna_ichiran_revPos;
+static emacs_value canna_key_Cntrl_Down;
+static emacs_value canna_key_Cntrl_Left;
+static emacs_value canna_key_Cntrl_Nfer;
+static emacs_value canna_key_Cntrl_Right;
+static emacs_value canna_key_Cntrl_Up;
+static emacs_value canna_key_Cntrl_Xfer;
+static emacs_value canna_key_Down;
+static emacs_value canna_key_Eisu;
+static emacs_value canna_key_End;
+static emacs_value canna_key_F1;
+static emacs_value canna_key_F10;
+static emacs_value canna_key_F2;
+static emacs_value canna_key_F3;
+static emacs_value canna_key_F4;
+static emacs_value canna_key_F5;
+static emacs_value canna_key_F6;
+static emacs_value canna_key_F7;
+static emacs_value canna_key_F8;
+static emacs_value canna_key_F9;
+static emacs_value canna_key_Hankakuzenkaku;
+static emacs_value canna_key_Help;
+static emacs_value canna_key_Hiragana;
+static emacs_value canna_key_Home;
+static emacs_value canna_key_Insert;
+static emacs_value canna_key_KP_Key;
+static emacs_value canna_key_Katakana;
+static emacs_value canna_key_Left;
+static emacs_value canna_key_Nfer;
+static emacs_value canna_key_Right;
+static emacs_value canna_key_Rolldown;
+static emacs_value canna_key_Rollup;
+static emacs_value canna_key_Shift_Down;
+static emacs_value canna_key_Shift_Left;
+static emacs_value canna_key_Shift_Nfer;
+static emacs_value canna_key_Shift_Right;
+static emacs_value canna_key_Shift_Up;
+static emacs_value canna_key_Shift_Xfer;
+static emacs_value canna_key_Up;
+static emacs_value canna_key_Xfer;
+static emacs_value canna_mode_AdjustBunsetsuMode;
+static emacs_value canna_mode_AlphaMode;
+static emacs_value canna_mode_BubunMuhenkanMode;
+static emacs_value canna_mode_BushuMode;
+static emacs_value canna_mode_ChangingServerMode;
+static emacs_value canna_mode_ChikujiTanMode;
+static emacs_value canna_mode_ChikujiYomiMode;
+static emacs_value canna_mode_DeleteDicMode;
+static emacs_value canna_mode_EmptyMode;
+static emacs_value canna_mode_ExtendMode;
+static emacs_value canna_mode_GreekMode;
+static emacs_value canna_mode_HanAlphaHenkanMode;
+static emacs_value canna_mode_HanAlphaKakuteiMode;
+static emacs_value canna_mode_HanHiraHenkanMode;
+static emacs_value canna_mode_HanHiraKakuteiMode;
+static emacs_value canna_mode_HanKataHenkanMode;
+static emacs_value canna_mode_HanKataKakuteiMode;
+static emacs_value canna_mode_HenkanMethodMode;
+static emacs_value canna_mode_HenkanMode;
+static emacs_value canna_mode_HenkanNyuryokuMode;
+static emacs_value canna_mode_HexMode;
+static emacs_value canna_mode_IchiranMode;
+static emacs_value canna_mode_JishuMode;
+static emacs_value canna_mode_KigoMode;
+static emacs_value canna_mode_LineMode;
+static emacs_value canna_mode_MountDicMode;
+static emacs_value canna_mode_OnOffMode;
+static emacs_value canna_mode_QuotedInsertMode;
+static emacs_value canna_mode_RussianMode;
+static emacs_value canna_mode_TankouhoMode;
+static emacs_value canna_mode_TourokuDicMode;
+static emacs_value canna_mode_TourokuEmptyMode;
+static emacs_value canna_mode_TourokuHinshiMode;
+static emacs_value canna_mode_TourokuMode;
+static emacs_value canna_mode_YesNoMode;
+static emacs_value canna_mode_YomiMode;
+static emacs_value canna_mode_ZenAlphaHenkanMode;
+static emacs_value canna_mode_ZenAlphaKakuteiMode;
+static emacs_value canna_mode_ZenHiraHenkanMode;
+static emacs_value canna_mode_ZenHiraKakuteiMode;
+static emacs_value canna_mode_ZenKataHenkanMode;
+static emacs_value canna_mode_ZenKataKakuteiMode;
+static emacs_value canna_empty_info;
+static emacs_value canna_inhibit_hankakukana;
+static emacs_value canna_through_info;
+
+static const char *doc_Fcanna_key_proc = "\n\
+Translate a key input CH to a set of strings.\n\
+The strings contain both well-formed string and intermediate result\n\
+to show the translation information to a user.  Converted strings are\n\
+stored in specific variables.\n\
+\n\
+Return the length of converted string if no error occurs, while\n\
+the error string if error occurs.\n\
+\n\
+moduled version\n\
+\n\
+(fn CH)";
+
+static const char *doc_Fcanna_set_bunsetsu_kugiri = "\n\
+Set the clause separator.\n\
+\n\
+Optional arg NUM non-nil means the white space separator will be used.\n\
+No separator will be used otherwise.\n\
+\n\
+moduled version\n\
+\n\
+(fn &optional NUM)";
+
+static const char *doc_Fcanna_initialize = "\n\
+Initialize ``canna'', which is a kana-to-kanji converter for GNU Emacs.\n\
+\n\
+Optional first arg NUM specifies whether to insert space character\n\
+between clauses when candidates are displayed.  If NUM is 1, which is\n\
+the default value, a space is inserted.  If NUM is a number other than\n\
+1, no space is inserted.\n\
+\n\
+Optional second arg SERVER specifies canna server.\n\
+\n\
+Optional third arg RCFILE specifies a file of personal\n\
+customization of canna.\n\
+\n\
+If nil is specified for each arg, the default value will be used.\n\
+\n\
+Return a list of the following elements.\n\
+- list of keys to turn on Japanese-mode\n\
+- error message\n\
+- list of warning messages\n\
+\n\
+moduled version\n\
+\n\
+(fn &optional NUM SERVER RCFILE)";
+
+static const char *doc_Fcanna_finalize = "\n\
+Finalize ``canna'', which is a kana-to-kanji converter for GNU Emacs.\n\
+Write miscellaneous informations to kana-to-kanji dictionary.\n\
+\n\
+Return a list of warning messages.\n\
+\n\
+moduled version\n\
+\n\
+(fn)";
+
+static const char *doc_Fcanna_touroku_string = "\n\
+Register Kanji words STR into kana-to-kanji conversion dictionary.\n\
+\n\
+Return the same thing as `canna-key-proc'.\n\
+\n\
+moduled version\n\
+\n\
+(fn STR)";
+
+static const char *doc_Fcanna_set_width = "\n\
+Set status-line width to NUM to display kanji candidates.\n\
+\n\
+moduled version\n\
+\n\
+(fn NUM)";
+
+static const char *doc_Fcanna_change_mode = "\n\
+Change Japanese pre-edit mode.  NUM is the mode number of Canna.\n\
+\n\
+Return the same thing as `canna-key-proc'.\n\
+\n\
+moduled version\n\
+\n\
+(fn NUM)";
+
+static const char *doc_Fcanna_store_yomi = "\n\
+Store the yomi characters YOMI on canna.\n\
+Optional arg ROMA is the roman spell of YOMI.\n\
+\n\
+Return the same thing as `canna-key-proc'.\n\
+\n\
+moduled version\n\
+\n\
+(fn YOMI &optional ROMA)";
+
+static const char *doc_Fcanna_do_function = "\n\
+Do the NUM-th canna function at the current mode.\n\
+Key input is supplied as optional arg CH, for the function which\n\
+needs an input character.\n\
+\n\
+Return the same thing as `canna-key-proc'.\n\
+\n\
+moduled version\n\
+\n\
+(fn NUM &optional CH)";
+
+static const char *doc_Fcanna_parse = "\n\
+Parse string STR as canlisp to customize canna setting.\n\
+\n\
+Return nil or list of warning messages if exists.\n\
+\n\
+moduled version\n\
+\n\
+(fn STR)";
+
+static const char *doc_Fcanna_query_mode = "\n\
+Get the current mode string.\n\
+\n\
+moduled version\n\
+\n\
+(fn)";
+
+static const char *doc_Fcanna_henkan_begin = "\n\
+moduled version\n\
+\n\
+(fn YOMI)";
+
+static const char *doc_Fcanna_henkan_next = "\n\
+moduled version\n\
+\n\
+(fn BUNSETSU)";
+
+static const char *doc_Fcanna_bunsetu_henkou = "\n\
+moduled version\n\
+\n\
+(fn BUNSETSU BUNLEN)";
+
+static const char *doc_Fcanna_henkan_kakutei = "\n\
+moduled version\n\
+\n\
+(fn BUN KOUHO)";
+
+static const char *doc_Fcanna_henkan_end = "\n\
+moduled version\n\
+\n\
+(fn)";
+
+static const char *doc_Fcanna_henkan_quit = "\n\
+moduled version\n\
+\n\
+(fn)";

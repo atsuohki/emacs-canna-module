@@ -1,0 +1,21 @@
+;;; -*-Emacs-Lisp-*-
+;;;
+;;; $Id: CANNA-MK,v 1.1 1998/01/16 08:51:13 morioka Exp $
+;;;
+
+(defun compile-canna ()
+  (let ((byte-boolean-vars (append '(canna-empty-info
+				     canna-through-info
+				     canna-do-keybind-for-functionkeys
+				     canna-use-space-key-as-henkan-region
+				     canna-enable-canna-undo-key
+				     canna-underline
+				     canna-inhibit-hankakukana
+				     canna-dump
+				     display-minibuffer-mode-in-minibuffer
+				     )
+				   byte-boolean-vars)) )
+    (byte-compile-file "canna.el")
+  ))
+
+;;; CANNA-MK ends here

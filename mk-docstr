@@ -1,0 +1,16 @@
+#!/bin/sh
+
+tr '\037' '\012' | \
+awk '
+BEGIN	{ head = -1; }
+/^Scanna./	{ next; }
+/^\(fn.*\)$/	{ if (head >= 0) {
+		    printf "moduled version\\n\\\n\\n\\\n%s\";\n", $0; head = -1; }
+		    next;}
+/^Fcanna/	{ 
+	  head = 0;
+	  gsub("-", "_", $1); printf "\nstatic const char *doc_%s = \"\\n\\\n", $1; next}
+/^$/	{ if (head <= 0) next; }
+	{ if (head >= 0) { printf "%s\\n\\\n", $0; head++;}}
+END	{ if (head >= 0) { printf "\";\n";}}
+'

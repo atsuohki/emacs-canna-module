@@ -1,0 +1,382 @@
+
+◎ GNU Emacs で Canna サーバを用いた日本語入力を可能にするパッチです。
+
+	CANNA-MK		canna.elをバイトコンパイルするためのスクリプト
+	Makefile		canna.elc、canna.soを作成するためのメイクファイル
+	README			このファイル
+	canna-leim.el		japanese-cannaを登録するためのlispコード
+	canna-module.h-save
+	canna.c			Cannaサーバとの通信を担うCコード
+	canna.el		japanese-cannaを実装するlispコード
+	emacs-27.1-patch	静的に組み込む場合に必要なパッチ
+	mk-docstr
+	site-start-example.el	canna-leim.elをロードし設定するサンプルコード
+
+○ Canna サーバとの通信を担う canna.c を GNU Emacs に組み込む方法は、
+	1) 静的に組み込む
+	2) `(module-load)'を用いて実行時に組み込む(emacs-25以降の機能)
+   の２つがあります。
+
+   canna.el はいずれかの方法で提供される Canna サーバとの通信機能を
+   用いて日本語入力を行います。この canna.el は、マイナーモードとして
+   実装していたlispコードを `(input-method-function)' を用いるように書き
+   換えたものです。(つまり、isearch.el等を変更する必要はありません。)
+
+  【静的に組み込む場合---emacsをソースコードからビルドする必要あり】
+ ・emacsのソースツリーに canna.c をコピーする(あるいはシンボリックリンクを張る)。
+ ・emacsのソースツリーにemacs-27.1-patchをあててから、emacsをビルドする。
+	configure … --with-canna …
+	make
+	make install (← rootである必要がある)
+   cannaのインクルードファイル、ライブラリーがOS非標準の場所にある場合には、
+   環境変数CFLAGS、LDFLAGSを適切に設定してから configure 実行する。
+
+  【`(module-load)'を用いる場合---emacs-27.1以降ではビルドは不要】
+ ・emacs-27以降ではデフォルトで`(module-load)'を利用できるため、
+   emacs自体のビルドは不要。
+   (これより前のemacsでは、configureに --with-modules を指定して再ビルドが必要)
+ ・Makefileを用いて canna.so をビルドする。
+   まず、Makefile内の
+	DL_INSTALLDIR
+		emacs の補助バイナリ(hexl,movemail等)を置くディレクトリ
+   を適切なパス名に変更してたうえで、
+	make clean; make canna.so
+   を実行し、canna.so が作成されたことを確認する。
+   さらに
+	make install.so  (← rootである必要がある)
+   を実行すると、DL_INSTALLDIR で指定したディレクトリに canna.so がコピーされる。
+
+   なお、静的に組み込む場合に必要なパッチ emacs-27.1-patch 内の
+   `lisp/international/isearch-x.el'に対するパッチをあてておくと
+   インクリメンタルサーチ時の色設定のバグを修正できる。
+
+○ canna-leim.el、canna.elのインストール
+   まず、Makefile内の
+	LISPDIR
+		emacs のサイトファイル群を置きくディレクトリ(load-pathのどれか)
+   を適切なパス名に変更してたうえで、
+	make clean; make canna.elc
+   を実行し、canna.elc が作成されたことを確認する。
+   さらに
+	make install.elc  (← rootである必要がある)
+   を実行すると、LISPDIR で指定したディレクトリに
+   canna-leim.el、canna.el.gz、canna.elc がコピーされる。
+
+【注意】
+・customizeコマンドでcanna.elの機能をカスタマイズ可能(グループ名 canna)。
+
+・~/.emacsをcustomize機能を使う/使わないの両方に対応するには、
+(unless (and (boundp 'canna-enable-customization) canna-enable-customization)
+    ;; customize機能を使わない場合の設定
+    (setq 変数名 値)   ← custom-set-varibles 内の canna-で始まるペア
+    …
+  )
+
+   とすればよい。
+
+【その他】
+ site-start.el等に
+;; ----------------------------------------------------------------------
+;; setup language & input method
+(if (and (not noninteractive)
+	 (load "canna-leim" t))
+    (custom-set-variables
+     '(current-language-environment "Japanese")
+     '(default-input-method "japanese-canna")
+    ))
+;; ----------------------------------------------------------------------
+ を追加すれば、「かんな」を利用可能になります。
+ なお、「かんな」のカスタマイズは、~/.emacs、~/.canna等で行う。
+
+【注意】
+ ・LISP変数 canna-coding-system のデフォルトは euc-jp ですが、
+	(setq canna-coding-system 'euc-jisx0213)
+  と設定すれば、JISX0213に変更できるはずです。
+  変換途中でなければ、いつ変更しても構いません。
+  (バッファーローカル変数にすれば、バッファ毎の対応も可能と思われるが、
+   canna.cでは未対応。
+   http://ikumi.que.jp/cmp/emacs.htmlの変更を取り込みました)
+
+ ・canna.el を修正したため、バッファごとに leim の入力方式を選択できます。
+
+ ・canna.oを静的にemacsに組み込む場合には、make-docfile の 引数に
+   canna.o が含まれていることを確認し、(他の変数とともに) globals.h
+   で定義されるようにしてください。(Makefileのパッチ)
+
+==========================================================================
+=== 変更履歴
+==========================================================================
+2020/05/10 ===============================================================
+
+ canna-input-method における universal-argument (C-u) の処理を
+ (quail-input-method と同じ処理に)変更。
+
+2020/02/22 ===============================================================
+
+ インクリメンタルサーチ(C-s、M-C-s、C-r、M-C-r)時の
+ かんなの変換モード表示のバグ修正。
+
+ 【注】インクリメンタルサーチ(C-s、M-C-s、C-r、M-C-r)時、
+       インクリメンタルサーチ開始バッファの変換モードが有効！
+       検索文字入力時には、minibufferに切り替わる。
+
+2019/11/28 ===============================================================
+
+ canna.el側でEUC<->UTF-8の変換を行う際、
+ (decode-coding-string (encode-coding-string STR 'utf-8-unix) 'utf-8-unix) ≡ STR
+ を仮定していた。
+ emacs-27.0.50のある時点から、
+ module_make_string() でのデコーディングで任意のバイト列を変換しなくなったため、
+ 8ビット透過に文字列をやりとりするために、文字列をbase64コーディングして
+ やりとりするように変更。
+
+2019/04/19 ===============================================================
+
+ emamcs-27.0.50 での、emacs_value の定義変更に対処。
+
+ emamcs-26 までは、emacs_value は、Lisp_Object(ポインタ)をエンコード
+ したものであったため、emacs_value 同士を比較することで、Lisp_Object
+ 同士を比較可能であった。
+
+ emamcs-27 では、emacs_value は、Lisp_Object(ポインタ)を納めたセルへの
+ ポインタに変更(struct emacs_value_tag {Lisp_Object v;} *emacs_value;)。
+ このため、Lisp_Object同士の比較には、module_eq()を使用する必要がある。
+
+ また、この定義変更に伴い、emacs_valueの値の有効期間は、
+ emacs-module側からの各呼び出しごと限定される。
+ そのため、初期化時に intern したシンボルに対応するemacs_valueの値を
+ 常に有効とするために、(グローバル領域に保持するように)
+ module_make_global_ref()を呼び出す。
+
+2019/04/14 ===============================================================
+
+  emacs-module対応時、iconvライブラリを使用するオプションを削除
+ (canna.el で対応済のため)。
+ LISP変数 emacs-module:canna-iconv も削除。
+
+2018/02/26 ===============================================================
+
+  markerの使用をやめる
+
+2018/02/24 ===============================================================
+
+  display-minibuffer-mode-in-minibuffer を non-nil にして
+  インクリメンタルサーチ(C-s、M-C-s、C-r、M-C-r)を行った場合、
+  かな漢字変換をオンにしてもエコーエリアには『I-search [かんな]: 』
+  と表示され、かんなの変換モード(普通は、[ あ ]となっているはずだが)
+  を識別できない。なにか1文字を打てば『[ あ ]I-search [かんな]:あ』や
+  『[漢字]I-search [かんな]:阿』のようにかんなの変換モードが表示される。
+
+  これは、何も打ってないときには、まだミニバッファーでの入力状態ではなく、
+  エコーエリアにメッセージを表示しているだけの状態であるために起こる現象。
+
+  対応策： メッセージを作成・表示する関数isearch-messageに優先して
+  呼ばれる関数の定義を納める変数 isearch-message-function に
+  mode-line-canna-mode-in-minibuffer と (isearch-message c-q-hack ellips)の
+  戻り値とを連結した文字列をミニバッファーメッセージとして表示・返す
+  関数を登録。
+
+2018/02/19 ===============================================================
+
+ canna-undo を C-x u (undo) にリバインドするか否かを
+ カスタマイズ変数canna-enable-canna-undo-keyで制御(デフォルト nil)。
+ ただし、変換確定直後にのみ読みに戻せる。読みに戻せない場合にはundo動作。
+ (canna-enable-canna-undo-keyの値にかかわらず、M-x canna-undoでも起動可能。)
+
+ canna-henkan-region等によるバッファからの削除動作が
+ undo-listに記録されるように修正。(削除部分はundoで復元可能)
+
+2018/02/17 ===============================================================
+
+ インクリメンタルサーチ時のプロンプトの色の変化は、
+ isearch-process-search-multibyte-characters(lisp/international/isearch-x.el)
+ にて、プロンプトのテキストプロパティをすべて削除しているのが原因。
+
+--- ./lisp/international/isearch-x.el-ORIG      2018-01-09 05:23:57.000000000 +0
+900
++++ ./lisp/international/isearch-x.el   2018-02-17 11:57:38.061537000 +0900
+@@ -108,7 +108,10 @@
+        ;; property will cause it to signal an error), so strip them here;
+        ;; read-string will add the same properties itself anyway.
+        ;;
+-       (set-text-properties 0 (length prompt) nil prompt)
++       ;;(set-text-properties 0 (length prompt) nil prompt)
++        ;;
++        ;; NO, read-string will add no property at all!
++        (remove-text-properties 0 (length prompt) '(read-only nil) prompt)
+ 
+        (if isearch-input-method-function
+            (let (;; Let input method work rather tersely.
+
+
+2018/02/13 ===============================================================
+
+ (一覧表示、単語登録の)ミニバッファ入力時のフリッカは、
+ read-key(subr.el)にてpromptが残らないようにする無条件な処理が原因。
+ 以下のようにパッチをあててもよいが、canna:read-key では、
+ inhibit-messageをnon-nilにしてmessageの出力を抑制してread-keyを呼ぶ。
+
+--- subr.el-ORIG        2018-01-09 05:23:57.000000000 +0900
++++ subr.el     2018-02-13 21:28:41.017945000 +0900
+@@ -2264,7 +2264,7 @@
+       ;; For some reason, `read-key(-sequence)' leaves the prompt in the echo
+       ;; area, whereas `read-event' seems to empty it just before returning
+       ;; (bug#22714).  So, let's mimic the behavior of `read-event'.
+-      (message nil)
++      (if prompt (message nil))
+       (use-global-map old-global-map))))
+ 
+ (defvar read-passwd-map
+
+2018/02/09 ===============================================================
+
+ canna.el: ミニバッファ入力時に変換モードがモード行に表示されないバグを修正。
+ (モード行に表示されないのは、 ミニバッファ以外の窓に変更がないため、
+  どのモード行も更新されないことが原因。)
+ ミニバッファの左端へ表示するコードを追加。
+
+ 以下のカスタマイズ変数用のcustomize対応コードを挿入。
+ ソースファイルロード時/バイトコンパイル時の
+ 変数canna-enable-customization で制御。
+ nil    → 旧来どおり setq で個別に設定
+ no-nil → customizeで設定 (グループ名 canna)
+
+ なお、canna-use-fences は廃止し canna-underline に一本化
+ (canna-underlineがnon-nilであれば、canna-use-fencesがtの場合と等価)
+					既定値
+  canna-do-keybind-for-functionkeys	(t)    ファンクションキーを有効
+  canna-dump				(nil)  キー入力をバッファcanna:dumpに表示
+  canna-inhibit-hankakukana		(nil)  半角カナを禁止
+  canna-server				(nil)  かんな サーバーのホスト名
+  canna-file				(nil)  かんな 初期設定ファイル名
+  canna-underline			(nil)  変換領域に下線を引く
+  canna-use-color			(nil)  変換領域を色付け表示
+  hilit-background-mode                 (nil)  色付け時、強制反転モード(02/19)
+  canna-enable-canna-undo-key           (nil)  C-x u にcanna-undoをバインド(02/19)
+  canna-use-space-key-as-henkan-region	(t)    スペースキーでリージョンを変換
+  display-minibuffer-mode-in-minibuffer	(nil)  ミニバッファにかんなモードを表示
+
+2018/02/01 ===============================================================
+
+ emacs-module.c の module-load() によって動的ロードする canna.so において
+ iconvライブラリを使いたくないので(emacs内部の文字コード変換機能のみを使う
+ ため)、canna.el側で EUC-JP <-> UTF-8 の相互変換を行うように修正。
+【注】iconvライブラリを使うには、canna.c のコンパイル時に
+      EMACS_MODULE_USE_ICONV を定義する。
+      canna.soでiconvを使っているか否かは、
+      変数emacs-module:canna-iconvで判別。
+	non-nil	内部的にiconvを使っている
+	nil	iconvを使っていない(以下のようにラッパー関数が必要)
+
+ すなわち、canna.cにおいて定義されたlisp関数のうち、引数に euc 文字列をとる、
+ あるいは、戻り値に euc 文字列を含む関数 FUNC は、
+	1) 文字列引数を euc コードに変換し、
+	2) FUNC の関数定義本体を呼び出し、
+	3) その戻値文字列を(eucコードから)UTF-8 コードに変換する
+ ラッパー関数で置き換える。(advice機能を使ったほうがよいのかも？)
+ 関数 FUNC の説明文字列をラッパー関数にもコピーする。
+
+ なお、
+ ・canna.cのlisp関数への引数文字列(バイト列) str にたいして
+   (encode-coding-string (decode-coding-string str 'utf-8-emacs) 'utf-8) ≡ str
+   ~~~~~~~~~~~~~~~~~~~~~                                         ~~~~~~~
+   module_copy_string_contents()が行う
+
+ ・canna.cのlisp関数からの戻値文字列(バイト列) str にたいして
+   (encode-coding-string (decode-coding-string str 'utf-8) 'utf-8) ≡ str
+                         ~~~~~~~~~~~~~~~~~~~~~     ~~~~~~~
+                         module_make_string()が行う
+
+ が成り立つことを仮定する。
+ また、encode/decode時のlast-coding-system-usedの変更とeol変換を抑制するために
+ ラッパー関数内での文字コード変換は、
+	(let (last-coding-system-used
+	      (inhibit-eol-conversion t))
+	      …
+	)
+ の内側で行う必要がある。
+
+ canna.el は、
+ ・canna.cを静的にリンクしたemacs
+ ・(iconvライブラリの有無にかかわらず) canna.soをmodule-load()で動的ロード
+ のいずれの場合にも対応済。
+
+2018/01/15 ===============================================================
+
+ Lisp_Stringの定義変更にともなうcanna.cの修正
+
+--- emacs26.0.90-canna-1_2/canna.c	2017-11-05 22:16:02.028276000 +0900
++++ emacs26.0.91-canna-1_2/canna.c	2018-01-15 18:04:08.146249000 +0900
+@@ -1631,8 +1631,8 @@
+ #else
+   if (coding)
+     lispstr = code_convert_string(lispstr, Vcanna_coding_system, Qnil, 1, 1, 1);
+-  strncpy(strbuf, XSTRING(lispstr)->data, XSTRING(lispstr)->size);
+-  strbuf[XSTRING(lispstr)->size] = '\0';
++  strncpy(strbuf, XSTRING(lispstr)->u.s.data, XSTRING(lispstr)->u.s.size);
++  strbuf[XSTRING(lispstr)->u.s.size] = '\0';
+ #endif /* AS_EMACS_MODULES */
+ }
+ 
+
+
+2017/11/03 ===============================================================
+
+ emacs 25.x 用の修正をそのまま適用。
+ ubuntu package gcc5 では、emacs-module.cのコンパイル結果にバグあり。
+ 回避するには、gcc オプション -O2 を -O1 に変更するか、
+ 以下のパッチを適用する。
+
+--- src/emacs-module.c  2017-10-11 18:01:51.000000000 +0900
++++ src/emacs-module.c  2017-11-02 21:26:00.106142000 +0900
+@@ -243,12 +243,15 @@
+    error it will return its argument, which can be a sentinel
+    value.  */
+ 
++static int dmy_var = 0;
++
+ #define MODULE_FUNCTION_BEGIN_NO_CATCH(error_retval)                    \
+   do {                                                                  \
+     module_assert_thread ();                                            \
+     module_assert_env (env);                                            \
+     if (module_non_local_exit_check (env) != emacs_funcall_exit_return) \
+       return error_retval;                                              \
++    dmy_var++;                                                          \
+   } while (false)
+ 
+ /* Use MODULE_FUNCTION_BEGIN to implement steps 2 through 4 for most
+
+
+2016/02/26 ===============================================================
+
+ これまでの Emacs ソースにたいする dynamic-XXX() のパッチは採用せずに、
+ emacs 25.x で追加された module-load() を用いる。
+
+canna.c:
+ emacs-module.hで定義された API を用いてlisp側のデータを参照する。
+ 引き続き、emacs本体に組み込むときのコードと共存可能にするために、
+ lisp変数への代入をマクロに変更、DEFUN/DEFxxxも再定義、
+ (コンパイルオプション -DAS_EMACS_MODULES で区別)。
+
+ 【注】Emacsのcoding systemを利用するには、
+       emacs-module.[ch] にパッチが必要(bug-report中)。
+
+       iconvを使って素の25.0.91に対応。
+       (EMACS_MODULE_PATCHEDを定義すれば、パッチ適用版対応)
+
+2014/04/16 ===============================================================
+
+  canna.cでSTRING_BYTE(lisp.h内での定義)の有無で、文字列の
+「文字数」v.s.「バイト数」を区別していたが、
+ これが変数に変更になったため、canna.c内で直接区別。
+
+2012/05/22 ===============================================================
+
+ 「かんな」のフロントエンドのプログラム群です。
+
+  canna.el        minor modeではなく、input-method-function を用いて
+  		  「かんな」を用いたかな漢字変換入力を行う。
+  canna-leim.el  「canna.el」で提供する機能をleimに登録
+  canna.c         ソースコード(25.x用)
+
+  Makefile	  FreeBSD用makeファイル

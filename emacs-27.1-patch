@@ -1,0 +1,172 @@
+--- configure.ac-ORIG	2020-07-30 06:40:41.000000000 +0900
++++ configure.ac	2020-08-11 08:53:59.374366000 +0900
+@@ -1621,6 +1621,21 @@
+ 
+ AC_SUBST(LIBS_SYSTEM)
+ 
++### statically link canna.o
++OPTION_DEFAULT_OFF([canna],[statically link canna.o])
++CANNACFLAGS=
++CANNAOBJ=
++CANNALIB=
++if test "${with_canna}" != no; then :
++  CANNACFLAGS="-DHAVE_CANNA"
++  CANNAOBJ=canna.o
++  CANNALIB="-lcanna"
++fi
++
++AC_SUBST(CANNACFLAGS)
++AC_SUBST(CANNAOBJ)
++AC_SUBST(CANNALIB)
++
+ ### Make sure subsequent tests use flags consistent with the build flags.
+ 
+ if test x"${OVERRIDE_CPPFLAGS}" != x; then
+--- lisp/international/isearch-x.el-ORIG	2020-07-28 06:21:49.000000000 +0900
++++ lisp/international/isearch-x.el	2020-08-11 08:53:59.380261000 +0900
+@@ -107,7 +107,10 @@
+ 	;; property will cause it to signal an error), so strip them here;
+ 	;; read-string will add the same properties itself anyway.
+ 	;;
+-	(set-text-properties 0 (length prompt) nil prompt)
++	;;(set-text-properties 0 (length prompt) nil prompt)
++        ;;
++        ;; NO, read-string will add no property at all!
++        (remove-text-properties 0 (length prompt) '(read-only nil) prompt)
+ 
+ 	(if isearch-input-method-function
+ 	    (let (;; Let input method work rather tersely.
+--- src/Makefile.in-ORIG	2020-07-30 06:40:42.000000000 +0900
++++ src/Makefile.in	2020-08-11 08:53:59.404923000 +0900
+@@ -100,7 +100,7 @@
+ LD_SWITCH_SYSTEM_TEMACS=@LD_SWITCH_SYSTEM_TEMACS@
+ 
+ ## Flags to pass to ld only for temacs.
+-TEMACS_LDFLAGS = $(LD_SWITCH_SYSTEM) $(LD_SWITCH_SYSTEM_TEMACS)
++TEMACS_LDFLAGS = $(LD_SWITCH_SYSTEM) $(LD_SWITCH_SYSTEM_TEMACS) $(LIB_SWITCH_CANNA)
+ 
+ ## If needed, the names of the paxctl and setfattr programs.
+ ## On grsecurity/PaX systems, unexec will fail due to a gap between
+@@ -374,6 +374,11 @@
+ pdmp :=
+ endif
+ 
++## statically link canna.o
++CANNA_CFLAGS=@CANNACFLAGS@
++CANNA_OBJ=@CANNAOBJ@
++LIB_SWITCH_CANNA=@CANNALIB@
++
+ # Flags that might be in WARN_CFLAGS but are not valid for Objective C.
+ NON_OBJC_CFLAGS = -Wignored-attributes -Wignored-qualifiers -Wopenmp-simd
+ 
+@@ -391,7 +396,7 @@
+   $(HARFBUZZ_CFLAGS) $(LIBOTF_CFLAGS) $(M17N_FLT_CFLAGS) $(DEPFLAGS) \
+   $(LIBSYSTEMD_CFLAGS) $(JSON_CFLAGS) \
+   $(LIBGNUTLS_CFLAGS) $(NOTIFY_CFLAGS) $(CAIRO_CFLAGS) \
+-  $(WERROR_CFLAGS)
++  $(WERROR_CFLAGS) $(CANNA_CFLAGS)
+ ALL_CFLAGS = $(EMACS_CFLAGS) $(WARN_CFLAGS) $(CFLAGS)
+ ALL_OBJC_CFLAGS = $(EMACS_CFLAGS) \
+   $(filter-out $(NON_OBJC_CFLAGS),$(WARN_CFLAGS)) $(CFLAGS) \
+@@ -420,6 +425,7 @@
+ 	doprnt.o intervals.o textprop.o composite.o xml.o lcms.o $(NOTIFY_OBJ) \
+ 	$(XWIDGETS_OBJ) \
+ 	profiler.o decompress.o \
++	$(CANNA_OBJ) \
+ 	thread.o systhread.o \
+ 	$(if $(HYBRID_MALLOC),sheap.o) \
+ 	$(MSDOS_OBJ) $(MSDOS_X_OBJ) $(NS_OBJ) $(CYGWIN_OBJ) $(FONT_OBJ) \
+--- src/coding.c-ORIG	2020-07-30 06:40:42.000000000 +0900
++++ src/coding.c	2020-08-11 08:53:59.407606000 +0900
+@@ -9485,7 +9485,7 @@
+       if (! norecord)
+ 	Vlast_coding_system_used = Qno_conversion;
+       if (NILP (dst_object))
+-	return (nocopy ? Fcopy_sequence (string) : string);
++	return (! nocopy ? Fcopy_sequence (string) : string);
+     }
+ 
+   if (NILP (coding_system))
+--- src/emacs.c-ORIG	2020-07-30 06:40:42.000000000 +0900
++++ src/emacs.c	2020-08-11 08:53:59.409478000 +0900
+@@ -1963,6 +1963,10 @@
+       syms_of_json ();
+ #endif
+ 
++#ifdef HAVE_CANNA
++      syms_of_canna ();
++#endif /* HAVE_CANNA */
++
+       keys_of_casefiddle ();
+       keys_of_cmds ();
+       keys_of_buffer ();
+--- src/lisp.h-ORIG	2020-07-30 06:40:42.000000000 +0900
++++ src/lisp.h	2020-08-11 08:53:59.411386000 +0900
+@@ -4742,6 +4742,10 @@
+ extern void malloc_probe (size_t);
+ extern void syms_of_profiler (void);
+ 
++#ifdef HAVE_CANNA
++/* Defined in canna.c */
++extern void syms_of_canna (void);
++#endif
+ 
+ #ifdef DOS_NT
+ /* Defined in msdos.c, w32.c.  */
+--- configure-orig	2020-08-05 04:43:32.000000000 +0900
++++ configure	2020-08-11 08:53:59.417443000 +0900
+@@ -1496,6 +1496,9 @@
+ PKG_CONFIG
+ SYSTEM_TYPE
+ LIB_MATH
++CANNALIB
++CANNAOBJ
++CANNACFLAGS
+ LIBS_SYSTEM
+ C_SWITCH_SYSTEM
+ UNEXEC_OBJ
+@@ -1657,6 +1660,7 @@
+ enable_check_lisp_object_type
+ enable_link_time_optimization
+ enable_silent_rules
++with_canna
+ with_x
+ with_libgmp
+ enable_cross_guesses
+@@ -2475,6 +2479,7 @@
+                           where the command 'gnustep-config' does not work;
+                           default $GNUSTEP_CONFIG_FILE, or
+                           /etc/GNUstep/GNUstep.conf
++  --with-canna            statically link canna.o
+   --with-x                use the X Window System
+   --without-libgmp        don't use the GNU Multiple Precision (GMP) library;
+                           this is the default on systems lacking libgmp.
+@@ -9683,6 +9688,28 @@
+   ## Motif needs -lgen.
+   unixware) LIBS_SYSTEM="-lsocket -lnsl -lelf -lgen" ;;
+ esac
++
++
++
++### statically link canna.o
++
++# Check whether --with-canna was given.
++if test "${with_canna+set}" = set; then :
++  withval=$with_canna;
++else
++      with_canna=no
++fi
++
++CANNACFLAGS=
++CANNAOBJ=
++CANNALIB=
++if test "${with_canna}" != no; then :
++  CANNACFLAGS="-DHAVE_CANNA"
++  CANNAOBJ=canna.o
++  CANNALIB="-lcanna"
++fi
++
++
+ 
+ 
+ 
