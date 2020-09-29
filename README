@@ -19,7 +19,7 @@
 
    canna.el はいずれかの方法で提供される Canna サーバとの通信機能を
    用いて日本語入力を行います。この canna.el は、マイナーモードとして
-   実装していたlispコードを `(input-method-function)' を用いるように書き
+   実装していたlispコードを `input-method-function' を用いるように書き
    換えたものです。(つまり、isearch.el等を変更する必要はありません。)
 
   【静的に組み込む場合---emacsをソースコードからビルドする必要あり】
@@ -53,7 +53,7 @@
 ○ canna-leim.el、canna.elのインストール
    まず、Makefile内の
 	LISPDIR
-		emacs のサイトファイル群を置きくディレクトリ(load-pathのどれか)
+		emacs のサイトファイル群を置くディレクトリ(load-pathのどれか)
    を適切なパス名に変更してたうえで、
 	make clean; make canna.elc
    を実行し、canna.elc が作成されたことを確認する。
