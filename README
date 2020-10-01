@@ -12,58 +12,73 @@
 	mk-docstr
 	site-start-example.el	canna-leim.elをロードし設定するサンプルコード
 
-○ Canna サーバとの通信を担う canna.c を GNU Emacs に組み込む方法は、
+○ Canna サーバとの通信を担うcanna.cをGNU Emacsに組み込む方法は、
 	1) 静的に組み込む
 	2) `(module-load)'を用いて実行時に組み込む(emacs-25以降の機能)
    の２つがあります。
 
-   canna.el はいずれかの方法で提供される Canna サーバとの通信機能を
-   用いて日本語入力を行います。この canna.el は、マイナーモードとして
-   実装していたlispコードを `input-method-function' を用いるように書き
-   換えたものです。(つまり、isearch.el等を変更する必要はありません。)
+   canna.elはいずれかの方法で提供されるCannaサーバとの通信機能を用いて
+   日本語入力を行います。このcanna.elは、マイナーモードとして実装していた
+   lispコードを `input-method-function' を用いるように書き換えたものです。
+   (したがって、キーマップの書き換えはしません)
 
-  【静的に組み込む場合---emacsをソースコードからビルドする必要あり】
- ・emacsのソースツリーに canna.c をコピーする(あるいはシンボリックリンクを張る)。
- ・emacsのソースツリーにemacs-27.1-patchをあててから、emacsをビルドする。
+  【静的に組み込む場合---emacsをソースコードから再ビルドする必要あり】
+ ・emacsソースツリーにcanna.cをコピーする(あるいはシンボリックリンクを張る)。
+ ・emacsソースツリーにemacs-27.1-patchをあててから、emacsをビルドする。
 	configure … --with-canna …
 	make
 	make install (← rootである必要がある)
-   cannaのインクルードファイル、ライブラリーがOS非標準の場所にある場合には、
-   環境変数CFLAGS、LDFLAGSを適切に設定してから configure 実行する。
+   なお、cannaのインクルードファイル、ライブラリーがOS非標準の場所にある
+   場合には、環境変数CFLAGS、LDFLAGSを適切に設定してからconfigureを実行する。
 
-  【`(module-load)'を用いる場合---emacs-27.1以降ではビルドは不要】
+   ※ この場合、canna.cはemacsソースツリーのlisp.hに依存するため、
+      emacsのバージョンに依存して、多少の修正が必要になります。
+      (canna.cの先頭部分のコメントを参照)
+
+  【`(module-load)'を用いる場合---emacs-27.1以降では再ビルドは不要】
  ・emacs-27以降ではデフォルトで`(module-load)'を利用できるため、
    emacs自体のビルドは不要。
    (これより前のemacsでは、configureに --with-modules を指定して再ビルドが必要)
- ・Makefileを用いて canna.so をビルドする。
+ ・Makefileを用いて canna.soをビルドする。
    まず、Makefile内の
 	DL_INSTALLDIR
-		emacs の補助バイナリ(hexl,movemail等)を置くディレクトリ
-   を適切なパス名に変更してたうえで、
+		emacsの補助バイナリ(hexl,movemail等)を置くディレクトリ
+	CANNA_HEADERDIR
+		Cannaのインクルードファイルの位置
+	CANNA_LDFLAGS
+		Cannaライブラリの位置、名称
+   を適切に変更したうえで、
 	make clean; make canna.so
-   を実行し、canna.so が作成されたことを確認する。
+   を実行し、canna.soが作成されたことを確認する。
    さらに
 	make install.so  (← rootである必要がある)
-   を実行すると、DL_INSTALLDIR で指定したディレクトリに canna.so がコピーされる。
+   を実行し、DL_INSTALLDIRで指定したディレクトリにcanna.soをコピーする。
 
-   なお、静的に組み込む場合に必要なパッチ emacs-27.1-patch 内の
-   `lisp/international/isearch-x.el'に対するパッチをあてておくと
+   ※ この場合、canna.cはemacs-module.hのみに依存し、
+      その他の emacsソースツリーには依存しません。
+      したがって、emacs-25.x 以降で利用可能。
+
+   なお、静的に組み込む場合に必要なパッチemacs-27.1-patch内の
+   `lisp/international/isearch-x.el' に対するパッチをあてておくと
    インクリメンタルサーチ時の色設定のバグを修正できる。
 
 ○ canna-leim.el、canna.elのインストール
    まず、Makefile内の
 	LISPDIR
 		emacs のサイトファイル群を置くディレクトリ(load-pathのどれか)
-   を適切なパス名に変更してたうえで、
+   を適切なパス名に変更したうえで、
 	make clean; make canna.elc
    を実行し、canna.elc が作成されたことを確認する。
    さらに
 	make install.elc  (← rootである必要がある)
-   を実行すると、LISPDIR で指定したディレクトリに
-   canna-leim.el、canna.el.gz、canna.elc がコピーされる。
+   を実行し、LISPDIR で指定したディレクトリに
+   canna-leim.el、canna.el.gz、canna.elcをコピーする。
 
 【注意】
 ・customizeコマンドでcanna.elの機能をカスタマイズ可能(グループ名 canna)。
+  (カスタマイズ変数を`setq'で個別に指定したい場合には、
+   canna.el内の変数`canna-enable-customization'に nil を設定してから
+   バイトコンパイルする)
 
 ・~/.emacsをcustomize機能を使う/使わないの両方に対応するには、
 (unless (and (boundp 'canna-enable-customization) canna-enable-customization)
