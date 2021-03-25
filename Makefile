@@ -5,11 +5,11 @@
 EMACS_FLAGS	= -batch -q -no-site-file -l CANNA-MK
 
 # directory where emacs source resides
-#SRC_TOP		= /usr/src/local/GNU/emacs/emacs-27.1
+#SRC_TOP		= /usr/src/local/GNU/emacs/emacs-27.2
 # directory where emacs binaries built
-#EMACS_BLD_DIR	= /usr/src/local/GNU/emacs/emacs-27.1
+#EMACS_BLD_DIR	= /usr/src/local/GNU/emacs/emacs-27.2
 # version of emacs
-BLD_VERSION	= 27.1
+BLD_VERSION	= 27.2
 
 INC_DIRS	= -I.
 CC		= cc
