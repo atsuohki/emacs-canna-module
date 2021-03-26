@@ -47,6 +47,8 @@
 		Cannaのインクルードファイルの位置
 	CANNA_LDFLAGS
 		Cannaライブラリの位置、名称
+	BLD_VERSION
+		emacsのバージョン番号(27.1,27.2,…)
    を適切に変更したうえで、
 	make clean; make canna.so
    を実行し、canna.soが作成されたことを確認する。
@@ -58,7 +60,7 @@
       その他の emacsソースツリーには依存しません。
       したがって、emacs-25.x 以降で利用可能。
 
-   なお、静的に組み込む場合に必要なパッチemacs-27.1-patch内の
+   なお、静的に組み込む場合に必要なパッチemacs-27.?-patch内の
    `lisp/international/isearch-x.el' に対するパッチをあてておくと
    インクリメンタルサーチ時の色設定のバグを修正できる。
 
