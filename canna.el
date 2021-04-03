@@ -1,4 +1,4 @@
-;; canna.el --- Interface to the Canna input method.
+;;; canna.el --- Interface to the Canna Server -*- lexical-binding: t; -*-
 
 ;; This program is based on the following `canna.el',
 ;; modified to use `input-method-function' directly
@@ -515,7 +515,7 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 		  'face
 		  (if canna:color-p 'attr-yomi 'underline))))
 
-(defmacro canna:yomi-attr-off (start end);
+(defmacro canna:yomi-attr-off ();
   `(if (overlayp canna:*yomi-overlay*)
        (delete-overlay canna:*yomi-overlay*)))
 
@@ -527,7 +527,7 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 		  'face
 		  (if canna:color-p 'attr-taishou 'region))))
 
-(defmacro canna:henkan-attr-off (start end)
+(defmacro canna:henkan-attr-off ()
   `(if (overlayp canna:*henkan-overlay*)
        (delete-overlay canna:*henkan-overlay*)))
 
@@ -539,7 +539,7 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 		  'face
 		  'attr-select)))
 
-(defmacro canna:select-attr-off (start end)
+(defmacro canna:select-attr-off ()
   `(if (overlayp canna:*select-overlay*)
        (delete-overlay canna:*select-overlay*)))
 
@@ -589,8 +589,8 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 	(if canna-underline
 	    ;; まず、属性を消す。
 	    (progn
-	      (canna:henkan-attr-off canna:*region-start* canna:*region-end*)
-	      (canna:yomi-attr-off canna:*region-start* canna:*region-end*)))
+	      (canna:henkan-attr-off)
+	      (canna:yomi-attr-off)))
 	(delete-region canna:*region-start* canna:*region-end*)))
 
   (setq canna:*region-start* nil
@@ -678,8 +678,7 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 	 (canna:minibuffer-input canna-ichiran-string
 				 canna-ichiran-length
 				 canna-ichiran-revpos
-				 canna-ichiran-revlen
-				 strs))
+				 canna-ichiran-revlen))
 
 	(canna:*cursor-was-in-minibuffer*
 	 ;; Emacs 23.1 requires following order!
@@ -687,7 +686,7 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 			    (get-buffer-create canna:*menu-buffer*))
 	 (select-window (minibuffer-window)))))
 
-(defun canna:minibuffer-input (str len revpos revlen nfixed)
+(defun canna:minibuffer-input (str len revpos revlen)
   "Displaying misc informations for kana-to-kanji input."
 
   ;; 作業をミニバッファに移すのに際して、現在のウィンドウの情報を保存
@@ -709,7 +708,7 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 		     (get-buffer-create canna:*menu-buffer*))
   (select-window (minibuffer-window))
 
-  (canna:select-attr-off (point-min) (point-max))
+  (canna:select-attr-off)
   (setq canna:*cursor-was-in-minibuffer* t)
   (delete-region (point-min) (point-max))
   (unless (eq canna:*previous-window* (selected-window))
@@ -774,7 +773,7 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 ;; workround: set inhibit-message non-nil
 (defmacro canna:read-key (&optional prompt)
   `(let ((inhibit-message t))
-    (read-key nil)))
+    (read-key ,prompt)))
 
 ;; starting with a given `key',
 ;; feeds input to a Canna server until conversion complete.
@@ -1329,53 +1328,52 @@ canna-kigou-mode	enter KIGOU input mode (\\[canna-kigou-mode])\n\
 canna-hex-mode		enter Kanji code input mode (\\[canna-hex-mode])\n\
 canna-bushu-mode	enter BUSHU input mode (\\[canna-bushu-mode])"
   (message "『かんな』を初期化しています....")
-  (let (init-val)
-    (cond ((and (fboundp 'canna-initialize) (fboundp 'canna-change-mode))
-	   ;; Canna が使える時は次の処理をする。
-	   (canna-setup-color)
-	   ;; 『かんな』システムの初期化
-	   (setq init-val (canna:initialize))
-	   (if canna-do-keybind-for-functionkeys
-	       (progn
-		 (global-set-key "\e[28~" 'canna-extend-mode) ; HELP on EWS4800
-		 (global-set-key "\e[2~"  'canna-kigou-mode)  ; INS  on EWS4800
-		 (global-set-key "\e[12~" 'canna-extend-mode)
-		 (global-set-key "\e[13~" 'canna-kigou-mode)
-		 (global-set-key "\e[14~" 'canna-hex-mode)
-		 (global-set-key "\e[15~" 'canna-bushu-mode)
-		 (define-key global-map [help] 'canna-extend-mode)
-		 (define-key global-map [insert] 'canna-kigou-mode)
-		 ;; f1 is for Help
-		 ;; f2 is for two-column, but ...
-		 (define-key global-map [f2] 'canna-extend-mode)
-		 (define-key global-map [f3] 'canna-kigou-mode)
-		 (define-key global-map [f4] 'canna-hex-mode)
-		 (define-key global-map [f5] 'canna-bushu-mode)))
+  (cond ((and (fboundp 'canna-initialize) (fboundp 'canna-change-mode))
+	 ;; Canna が使える時は次の処理をする。
+	 (canna-setup-color)
+	 ;; 『かんな』システムの初期化
+	 (canna:initialize)
+	 (if canna-do-keybind-for-functionkeys
+	     (progn
+	       (global-set-key "\e[28~" 'canna-extend-mode) ; HELP on EWS4800
+	       (global-set-key "\e[2~"  'canna-kigou-mode)  ; INS  on EWS4800
+	       (global-set-key "\e[12~" 'canna-extend-mode)
+	       (global-set-key "\e[13~" 'canna-kigou-mode)
+	       (global-set-key "\e[14~" 'canna-hex-mode)
+	       (global-set-key "\e[15~" 'canna-bushu-mode)
+	       (define-key global-map [help] 'canna-extend-mode)
+	       (define-key global-map [insert] 'canna-kigou-mode)
+	       ;; f1 is for Help
+	       ;; f2 is for two-column, but ...
+	       (define-key global-map [f2] 'canna-extend-mode)
+	       (define-key global-map [f3] 'canna-kigou-mode)
+	       (define-key global-map [f4] 'canna-hex-mode)
+	       (define-key global-map [f5] 'canna-bushu-mode)))
 
-	   ;; key binding for
-	   (if canna-use-space-key-as-henkan-region
-	       (global-set-key [remap set-mark-command] 'canna-set-mark-command))
-	   (if canna-enable-canna-undo-key
-	       (global-set-key [remap undo] 'canna-undo))
+	 ;; key binding for
+	 (if canna-use-space-key-as-henkan-region
+	     (global-set-key [remap set-mark-command] 'canna-set-mark-command))
+	 (if canna-enable-canna-undo-key
+	     (global-set-key [remap undo] 'canna-undo))
 
-	   ;; モード行の作成
-	   (canna:create-mode-line)
-	   (mode-line-canna-mode-update canna:*alpha-mode-string*))
+	 ;; モード行の作成
+	 (canna:create-mode-line)
+	 (mode-line-canna-mode-update canna:*alpha-mode-string*))
 
-	  ((fboundp 'canna-initialize)
-	   (beep)
-	   (with-output-to-temp-buffer "*canna-warning*"
-	     (princ "この Emacs/Mule では new-canna が使えません")
-	     (terpri)
-	     (help-print-return-message)))
+	((fboundp 'canna-initialize)
+	 (beep)
+	 (with-output-to-temp-buffer "*canna-warning*"
+	   (princ "この Emacs/Mule では new-canna が使えません")
+	   (terpri)
+	   (help-print-return-message)))
 
-	  (t ; 『かんな』システムが使えなかった時の処理
-	   (beep)
-	   (with-output-to-temp-buffer "*canna-warning*"
-	     (princ "この Emacs/Mule では canna が使えません")
-	     (terpri)
-	     (help-print-return-message))))
-    (message "『かんな』を初期化しています....done")))
+	(t ; 『かんな』システムが使えなかった時の処理
+	 (beep)
+	 (with-output-to-temp-buffer "*canna-warning*"
+	   (princ "この Emacs/Mule では canna が使えません")
+	   (terpri)
+	   (help-print-return-message))))
+  (message "『かんな』を初期化しています....done"))
 
 (defun canna:output-warnings (mesg)
   (with-output-to-temp-buffer "*canna-warning*"
