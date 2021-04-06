@@ -551,21 +551,20 @@ type_error(emacs_value pred, emacs_value data)
 static void
 defvar_doc(emacs_value var, char *str)
 {
-  static emacs_value _Fput = NULL, Qvar_doc, empty_str;
-  emacs_value args[3];
+  static emacs_value _Feval = NULL, Qdefvar, empty_str;
+  emacs_value args[1], doc;
 
-  if (_Fput == NULL) {
-    _Fput = module_intern("put");
-    Qvar_doc = module_intern("variable-documentation");
+  if (_Feval == NULL) {
+    _Feval = module_intern("eval");
+    Qdefvar = module_intern("defvar");
     empty_str = module_make_string("", 0);
   }
-  args[0] = var;
-  args[1] = Qvar_doc;
   if (str && str[0])
-    args[2] = module_make_string(str, strlen(str));
+    doc = module_make_string(str, strlen(str));
   else
-    args[2] = empty_str;
-  (void) module_funcall(_Fput, 3, args);
+    doc = empty_str;
+  args[0] = Fcons(Qdefvar, Fcons(var, Fcons(Qnil, Fcons(doc, Qnil))));
+  (void) module_funcall(_Feval, 1, args);
 }
 
 static emacs_value
