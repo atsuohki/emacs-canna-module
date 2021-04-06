@@ -1502,30 +1502,9 @@ canna-bushu-mode	enter BUSHU input mode (\\[canna-bushu-mode])"
 			  (cwdef (symbol-function wrnm)))
 		      (fset mdnm (symbol-function fn))
 		      ;; copy DOCSTRING from the original definition if any
-		      ;; which is better?
-		      ;;	(fset fn cwdef)
-		      ;;	(put fn 'function-documentation
-		      ;;	     (concat "** WRAPPED version **\n" doc))
-		      (fset fn (cond
-				((and (> (length doc) 0)
-				      (eq (type-of cwdef) 'compiled-function)
-				      (= (length cwdef) 4))
-				 (make-byte-code
-				  (aref cwdef 0) (aref cwdef 1)
-				  (aref cwdef 2) (aref cwdef 3)
-				  (concat "** compiled WRAPPED version **\n" doc)))
-
-				((and (> (length doc) 0)
-				      (consp cwdef)
-				      (eq (car cwdef) 'lambda)
-				      (not (stringp (caddr cwdef))))
-				 (setcdr (cdr cwdef)
-					 (cons
-					  (concat "** WRAPPED version **\n" doc)
-					  (cddr cwdef)))
-				 cwdef)
-
-				(t cwdef))))
+		      (fset fn cwdef)
+		      (put fn 'function-documentation
+			   (concat "** WRAPPED version **\n" doc)))
 		  ;; else -- delete unnecessary symbols
 		  (unintern mdnm nil)
 		  (unintern fn nil))
