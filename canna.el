@@ -1398,6 +1398,9 @@ canna-bushu-mode	enter BUSHU input mode (\\[canna-bushu-mode])"
 ;; base64 decoding/encoding.
 ;;
 
+(defvar canna:modules nil
+  "place holder for modules")
+
 (defun canna:encode (str)
   (cond ((and (stringp str)
 	      (< 0 (length str)))
@@ -1434,7 +1437,6 @@ canna-bushu-mode	enter BUSHU input mode (\\[canna-bushu-mode])"
 ;; wrappers for lisp functions defined in canna.so.
 ;; they take EUC-string arguments or return EUC-string values
 ;;
-;; using advicing
 
 (defmacro canna:wrapper (fn args &optional result)
   (let* ((argdecl (cons nil nil))  (ad argdecl)
@@ -1455,43 +1457,45 @@ canna-bushu-mode	enter BUSHU input mode (\\[canna-bushu-mode])"
 	  args)
     (setq argdecl (cdr argdecl)
 	  argcall (cdr argcall))
-    `(advice-add ',fn
-		 :around
-		 #'(lambda (func ,@argdecl)
-		     (let (last-coding-system-used
-			   (inhibit-eol-conversion t))
-		       (,result (funcall func ,@argcall)))))
-    ))
+    `(let ((fcode (symbol-function ',fn)))
+       (when (module-function-p fcode)
+	 (fset ',fn
+	       #'(lambda (,@argdecl)
+		   (let (last-coding-system-used
+			 (inhibit-eol-conversion t))
+		     (,result (funcall fcode ,@argcall)))))
+	 (put ',fn 'function-documentation
+	      (concat "**wrapped**" (documentation fcode)))
+	 (setq canna:modules (cons (cons ',fn fcode) canna:modules))
+	 ',fn))))
 
 ;;
 ;; establish/delete wrappers
 ;;
-(if (module-function-p (symbol-function 'canna-key-proc))
-    ;; establish wrappers
-    (progn
-     (canna:wrapper canna-key-proc (ch) canna:storeResults)
-     (canna:wrapper canna-initialize (&optional num server rcfile))
-     (canna:wrapper canna-finalize ())
-     (canna:wrapper canna-touroku-string ((canna:encode str)) canna:storeResults)
-     (canna:wrapper canna-change-mode (num) canna:storeResults)
-     (canna:wrapper canna-store-yomi ((canna:encode yomi)
-				      &optional (canna:encode roma))
-		    canna:storeResults)
-     (canna:wrapper canna-do-function (num &optional ch) canna:storeResults)
-     (canna:wrapper canna-parse ((canna:encode str)))
-     (canna:wrapper canna-query-mode ())
-
-     ;; #ifdef WITH_KKCP
-     (unless (null (symbol-function 'canna-henkan-begin))
-       (canna:wrapper canna-henkan-begin ((canna:encode yomi)))
-       (canna:wrapper canna-henkan-next (bunsetsu))
-       (canna:wrapper canna-bunsetu-henkou (bunsetsu bunlen)) )
-     ;; #end /* WITH_KKCP */
-     )
-  ;; delete unused functions
+(unless (module-function-p (symbol-function 'canna-key-proc))
+  ;; delete unused variable/functions
+  (unintern "canna:modules" nil)
   (unintern "canna:encode" nil)
   (unintern "canna:decode" nil)
   (unintern "canna:storeResults" nil))
+
+(canna:wrapper canna-key-proc (ch) canna:storeResults)
+(canna:wrapper canna-initialize (&optional num server rcfile))
+(canna:wrapper canna-finalize ())
+(canna:wrapper canna-touroku-string ((canna:encode str)) canna:storeResults)
+(canna:wrapper canna-change-mode (num) canna:storeResults)
+(canna:wrapper canna-store-yomi ((canna:encode yomi)
+				 &optional (canna:encode roma))
+	       canna:storeResults)
+(canna:wrapper canna-do-function (num &optional ch) canna:storeResults)
+(canna:wrapper canna-parse ((canna:encode str)))
+(canna:wrapper canna-query-mode ())
+
+;; #ifdef WITH_KKCP
+(canna:wrapper canna-henkan-begin ((canna:encode yomi)))
+(canna:wrapper canna-henkan-next (bunsetsu))
+(canna:wrapper canna-bunsetu-henkou (bunsetsu bunlen))
+;; #endif /* WITH_KKCP */
 
 (unintern "canna:wrapper" nil)
 
