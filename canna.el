@@ -104,7 +104,6 @@
      (module-load (expand-file-name "canna.so" exec-directory)))
 
 (or (boundp 'CANNA)
-    (featurep 'CANNA)
     (error "Canna is not built into this Emacs"))
 ;;;
 ;;;===========================================================;;;
@@ -1399,7 +1398,7 @@ canna-bushu-mode	enter BUSHU input mode (\\[canna-bushu-mode])"
 ;;
 
 (defvar canna:modules nil
-  "place holder for modules")
+  "place-holder for moduled canna functions")
 
 (defun canna:encode (str)
   (cond ((and (stringp str)
@@ -1435,7 +1434,7 @@ canna-bushu-mode	enter BUSHU input mode (\\[canna-bushu-mode])"
     val))
 ;;
 ;; wrappers for lisp functions defined in canna.so.
-;; they take EUC-string arguments or return EUC-string values
+;; they take euc-coded string arguments or return euc-coded string values
 ;;
 
 (defmacro canna:wrapper (fn args &optional result)
