@@ -616,13 +616,13 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 	 (setq canna:*region-start* (point))
 	 (unless canna-underline
 	   (insert "||")
-	   (setq canna:*region-end* (point))
 	   (backward-char 1))
 	 (insert canna-henkan-string)
 	 (if canna-underline
 	     (progn
 	       (setq canna:*region-end* (point))
-	       (canna:yomi-attr-on canna:*region-start* canna:*region-end*)))
+	       (canna:yomi-attr-on canna:*region-start* canna:*region-end*))
+	   (setq canna:*region-end* (1+ (point))))
 	 (setq canna:*last-kouho* canna-henkan-length)))
 
   ;; 候補領域では強調したい文字列が存在するものと考えら
