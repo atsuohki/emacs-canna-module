@@ -1,0 +1,177 @@
+--- configure.ac-ORIG	2023-07-23 16:39:11.000000000 +0900
++++ configure.ac	2023-07-31 08:16:52.488926000 +0900
+@@ -1649,6 +1649,21 @@
+ 
+ AC_SUBST([LIBS_SYSTEM])
+ 
++### statically link canna.o
++OPTION_DEFAULT_OFF([canna],[statically link canna.o])
++CANNACFLAGS=
++CANNAOBJ=
++CANNALIB=
++if test "${with_canna}" != no; then :
++  CANNACFLAGS="-DHAVE_CANNA"
++  CANNAOBJ=canna.o
++  CANNALIB="-lcanna"
++fi
++
++AC_SUBST(CANNACFLAGS)
++AC_SUBST(CANNAOBJ)
++AC_SUBST(CANNALIB)
++
+ ### Make sure subsequent tests use flags consistent with the build flags.
+ 
+ if test x"${OVERRIDE_CPPFLAGS}" != x; then
+@@ -6734,6 +6749,7 @@
+   Does Emacs have native lisp compiler?                   ${HAVE_NATIVE_COMP}
+   Does Emacs use version 2 of the X Input Extension?      ${HAVE_XINPUT2}
+   Does Emacs generate a smaller-size Japanese dictionary? ${with_small_ja_dic}
++  Does Emacs statically link Canna?                       ${with_canna}
+ "])
+ 
+ if test -n "${EMACSDATA}"; then
+--- lisp/international/isearch-x.el-ORIG	2023-01-01 22:46:42.000000000 +0900
++++ lisp/international/isearch-x.el	2023-07-31 08:14:31.511731000 +0900
+@@ -115,7 +115,10 @@
+ 	;; property will cause it to signal an error), so strip them here;
+ 	;; read-string will add the same properties itself anyway.
+ 	;;
+-	(set-text-properties 0 (length prompt) nil prompt)
++	;;(set-text-properties 0 (length prompt) nil prompt)
++        ;;
++        ;; NO, read-string will add no property at all!
++        (remove-text-properties 0 (length prompt) '(read-only nil) prompt)
+ 
+ 	(if isearch-input-method-function
+ 	    (let (;; Let input method work rather tersely.
+--- src/Makefile.in-ORIG	2023-06-22 20:49:11.000000000 +0900
++++ src/Makefile.in	2023-07-31 08:14:31.533135000 +0900
+@@ -104,7 +104,7 @@
+ LD_SWITCH_SYSTEM_TEMACS=@LD_SWITCH_SYSTEM_TEMACS@
+ 
+ ## Flags to pass to ld only for temacs.
+-TEMACS_LDFLAGS = $(LD_SWITCH_SYSTEM) $(LD_SWITCH_SYSTEM_TEMACS)
++TEMACS_LDFLAGS = $(LD_SWITCH_SYSTEM) $(LD_SWITCH_SYSTEM_TEMACS) $(LIB_SWITCH_CANNA)
+ 
+ ## If needed, the names of the paxctl and setfattr programs.
+ ## On grsecurity/PaX systems, unexec will fail due to a gap between
+@@ -390,6 +390,11 @@
+ bootstrap_pdmp :=
+ pdmp :=
+ endif
++ 
++## statically link canna.o
++CANNA_CFLAGS=@CANNACFLAGS@
++CANNA_OBJ=@CANNAOBJ@
++LIB_SWITCH_CANNA=@CANNALIB@
+ 
+ # Flags that might be in WARN_CFLAGS but are not valid for Objective C.
+ NON_OBJC_CFLAGS = -Wignored-attributes -Wignored-qualifiers -Wopenmp-simd -Wnested-externs
+@@ -411,6 +416,7 @@
+   $(HARFBUZZ_CFLAGS) $(LIBOTF_CFLAGS) $(M17N_FLT_CFLAGS) $(DEPFLAGS) \
+   $(LIBSYSTEMD_CFLAGS) $(JSON_CFLAGS) $(XSYNC_CFLAGS) $(TREE_SITTER_CFLAGS) \
+   $(LIBGNUTLS_CFLAGS) $(NOTIFY_CFLAGS) $(CAIRO_CFLAGS) \
++  $(CANNA_CFLAGS) \
+   $(WERROR_CFLAGS) $(HAIKU_CFLAGS) $(XCOMPOSITE_CFLAGS) $(XSHAPE_CFLAGS)
+ ALL_CFLAGS = $(EMACS_CFLAGS) $(WARN_CFLAGS) $(CFLAGS)
+ ALL_OBJC_CFLAGS = $(EMACS_CFLAGS) \
+@@ -444,6 +450,7 @@
+ 	doprnt.o intervals.o textprop.o composite.o xml.o lcms.o $(NOTIFY_OBJ) \
+ 	$(XWIDGETS_OBJ) 						       \
+ 	profiler.o decompress.o 					       \
++	$(CANNA_OBJ)							       \
+ 	thread.o systhread.o sqlite.o  treesit.o			       \
+ 	itree.o 							       \
+ 	$(if $(HYBRID_MALLOC),sheap.o) 					       \
+--- src/emacs.c-ORIG	2023-03-18 18:06:47.000000000 +0900
++++ src/emacs.c	2023-07-31 08:14:31.534831000 +0900
+@@ -2410,6 +2410,10 @@
+       syms_of_json ();
+ #endif
+ 
++#ifdef HAVE_CANNA
++      syms_of_canna ();
++#endif /* HAVE_CANNA */
++
+       keys_of_keyboard ();
+ 
+ #ifdef HAVE_NATIVE_COMP
+--- src/lisp.h-ORIG	2023-07-16 04:16:00.000000000 +0900
++++ src/lisp.h	2023-07-31 08:14:31.536802000 +0900
+@@ -5207,6 +5207,10 @@
+ extern void malloc_probe (size_t);
+ extern void syms_of_profiler (void);
+ 
++#ifdef HAVE_CANNA
++/* Defined in canna.c */
++extern void syms_of_canna (void);
++#endif
+ 
+ #ifdef DOS_NT
+ /* Defined in msdos.c, w32.c.  */
+--- configure-orig	2023-07-31 08:16:51.508132000 +0900
++++ configure	2023-07-31 08:16:54.720640000 +0900
+@@ -1766,6 +1766,9 @@
+ PKG_CONFIG
+ SYSTEM_TYPE
+ LIB_MATH
++CANNALIB
++CANNAOBJ
++CANNACFLAGS
+ LIBS_SYSTEM
+ C_SWITCH_SYSTEM
+ C_SWITCH_MACHINE
+@@ -1942,6 +1945,7 @@
+ enable_check_lisp_object_type
+ enable_link_time_optimization
+ enable_silent_rules
++with_canna
+ with_x
+ enable_cross_guesses
+ enable_acl
+@@ -2807,6 +2811,7 @@
+                           it; 'aot' will make the build process compile all
+                           the Lisp files in the tree natively ahead of time.
+                           (This will usually be quite slow.)
++  --with-canna            statically link canna.o
+   --with-x                use the X Window System
+   --without-libgmp        do not use the GNU Multiple Precision (GMP) library;
+                           this is the default on systems lacking libgmp.
+@@ -10981,6 +10986,29 @@
+ 
+ 
+ 
++### statically link canna.o
++
++# Check whether --with-canna was given.
++if test ${with_canna+y}
++then :
++  withval=$with_canna;
++else $as_nop
++      with_canna=no
++fi
++
++CANNACFLAGS=
++CANNAOBJ=
++CANNALIB=
++if test "${with_canna}" != no; then :
++  CANNACFLAGS="-DHAVE_CANNA"
++  CANNAOBJ=canna.o
++  CANNALIB="-lcanna"
++fi
++
++
++
++
++
+ ### Make sure subsequent tests use flags consistent with the build flags.
+ 
+ if test x"${OVERRIDE_CPPFLAGS}" != x; then
+@@ -44024,6 +44052,7 @@
+   Does Emacs have native lisp compiler?                   ${HAVE_NATIVE_COMP}
+   Does Emacs use version 2 of the X Input Extension?      ${HAVE_XINPUT2}
+   Does Emacs generate a smaller-size Japanese dictionary? ${with_small_ja_dic}
++  Does Emacs statically link Canna?                       ${with_canna}
+ "
+ 
+ if test -n "${EMACSDATA}"; then

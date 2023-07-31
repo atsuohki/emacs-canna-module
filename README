@@ -8,10 +8,12 @@
 	canna-module.h-save
 	canna.c			Cannaサーバとの通信を担うCコード
 	canna.el		japanese-cannaを実装するlispコード
+				(29.1向けの修正を含む)
 	emacs-27.1-patch	静的に組み込む場合に必要なパッチ
 	emacs-27.2-patch		同上
 	emacs-28.1-patch		同上
 	emacs-28.2-patch		同上
+	emacs-29.1-patch		同上
 	mk-docstr
 	site-start-example.el	canna-leim.elをロードし設定するサンプルコード
 

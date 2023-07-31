@@ -196,7 +196,7 @@
 (eval-and-compile
   (defconst canna-enable-customization t "enable customization"))
 
-(defmacro canna:customize (b1 b2 &rest rest) "" nil
+(defmacro canna:customize (b1 b2 &rest rest) ""
 	  (cond ((null rest)
 		 (if canna-enable-customization
 		     b2
@@ -473,7 +473,7 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 	"force reverse video mode\n\
 (need \\[canna-setup-color] to take effect)"
 	:type '(choice (const :tag "normal" nil)
-		       (const :tag "reverse" 'dark))
+		       (symbol :tag "reverse" dark))
 	:group 'canna )
 
 (defvar canna:color-p nil "色が使えるか")
@@ -1014,8 +1014,8 @@ If transient mark mode is off, you must type C-SPC twice to begin region."
 
 (defun canna:without-newline (start end)
   (and (< start end)
-       (or (and (<= (point-at-bol) start) (= (point) end))
-           (and (= start (point)) (<= end (point-at-eol))))))
+       (or (and (<= (line-beginning-position) start) (= (point) end))
+           (and (= start (point)) (<= end (line-end-position))))))
 
 (defun canna:all-ascii (start end)
   (let ((cnt 0))
@@ -1158,7 +1158,7 @@ dictionary."
 	     (and (goto-char canna:*spos-undo-text*)
 		  (setq canna:*epos-undo-text*
 			(search-forward (car canna:*undo-text-yomi*)
-					(point-at-eol)
+					(line-end-position)
 					t))
 		  (= canna:*spos-undo-text* (match-beginning 0)))))
       (progn (message "読みに戻します！")
