@@ -14,6 +14,7 @@
 	emacs-28.1-patch		同上
 	emacs-28.2-patch		同上
 	emacs-29.1-patch		同上
+	emacs-30.1-patch		同上
 	mk-docstr
 	site-start-example.el	canna-leim.elをロードし設定するサンプルコード
 
@@ -29,7 +30,7 @@
 
   【静的に組み込む場合---emacsをソースコードから再ビルドする必要あり】
  ・emacsソースツリーにcanna.cをコピーする(あるいはシンボリックリンクを張る)。
- ・emacsソースツリーに該当する emacs-2?.?-patch をあててから、
+ ・emacsソースツリーに該当する emacs-??.?-patch をあててから、
    emacsをビルドする。
 	configure … --with-canna …
 	make
@@ -54,7 +55,9 @@
 	CANNA_LDFLAGS
 		Cannaライブラリの位置、名称
 	BLD_VERSION
-		emacsのバージョン番号(27.1,27.2,28.1)
+		emacsのバージョン番号(27.1,27.2,28.1,29.1,30.1)
+	OS_NAME
+		emacsのアーキテチャー/OS依存コードを納めるディレクトリ名
    を適切に変更したうえで、
 	make clean; make canna.so
    を実行し、canna.soが作成されたことを確認する。
@@ -66,7 +69,7 @@
       その他の emacsソースツリーには依存しません。
       したがって、emacs-25.x 以降で利用可能。
 
-   なお、静的に組み込む場合に必要なパッチemacs-2?.?-patch内の
+   なお、静的に組み込む場合に必要なパッチemacs-??.?-patch内の
    `lisp/international/isearch-x.el' に対するパッチをあてておくと
    インクリメンタルサーチ時の色設定のバグを修正できる。
 
