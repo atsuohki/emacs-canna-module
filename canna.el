@@ -1220,10 +1220,7 @@ dictionary."
 (defun canna-setup-color ()
   ;; 配色設定 (by yuuji@ae.keio.ac.jp)
   (interactive)
-  (setq canna:color-p (and canna-use-color
-			   (or (and (eq window-system 'x)
-			       	    (x-display-color-p))
-			       (tty-display-color-p))))
+  (setq canna:color-p (and canna-use-color (display-color-p)))
   ;;カラーの時underlineモードと同じ状態で初期化する必要がある
   (setq canna-underline (or canna:color-p canna-underline))
   (cond

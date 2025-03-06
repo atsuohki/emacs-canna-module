@@ -1,0 +1,150 @@
+--- configure.ac-ORIG	2025-02-20 08:46:53.000000000 +0900
++++ configure.ac	2025-03-01 11:20:27.086735000 +0900
+@@ -2375,6 +2375,21 @@
+ 
+ AC_SUBST([LIBS_SYSTEM])
+ 
++### statically link canna.o
++OPTION_DEFAULT_OFF([canna],[statically link canna.o])
++CANNACFLAGS=
++CANNAOBJ=
++CANNALIB=
++if test "${with_canna}" != no; then :
++  CANNACFLAGS="-DHAVE_CANNA"
++  CANNAOBJ=canna.o
++  CANNALIB="-lcanna"
++fi
++
++AC_SUBST(CANNACFLAGS)
++AC_SUBST(CANNAOBJ)
++AC_SUBST(CANNALIB)
++
+ ### Make sure subsequent tests use flags consistent with the build flags.
+ 
+ if test x"${OVERRIDE_CPPFLAGS}" != x; then
+@@ -7772,6 +7787,7 @@
+   Does Emacs have native lisp compiler?                   ${HAVE_NATIVE_COMP}
+   Does Emacs use version 2 of the X Input Extension?      ${HAVE_XINPUT2}
+   Does Emacs generate a smaller-size Japanese dictionary? ${with_small_ja_dic}
++  Does Emacs statically link Canna?                       ${with_canna}
+ "])
+ 
+ if test -n "${EMACSDATA}"; then
+--- lisp/international/isearch-x.el-ORIG	2025-02-18 07:38:58.000000000 +0900
++++ lisp/international/isearch-x.el	2025-02-25 17:45:38.951753000 +0900
+@@ -115,7 +115,10 @@
+ 	;; property will cause it to signal an error), so strip them here;
+ 	;; read-string will add the same properties itself anyway.
+ 	;;
+-	(set-text-properties 0 (length prompt) nil prompt)
++	;;(set-text-properties 0 (length prompt) nil prompt)
++        ;;
++        ;; NO, read-string will add no property at all!
++        (remove-text-properties 0 (length prompt) '(read-only nil) prompt)
+ 
+ 	(if isearch-input-method-function
+ 	    (let (;; Let input method work rather tersely.
+--- src/emacs.c-ORIG	2025-02-19 03:31:36.000000000 +0900
++++ src/emacs.c	2025-02-25 17:45:38.972912000 +0900
+@@ -2491,6 +2491,10 @@
+       syms_of_pdumper ();
+       syms_of_json ();
+ 
++#ifdef HAVE_CANNA
++      syms_of_canna ();
++#endif /* HAVE_CANNA */
++
+       keys_of_keyboard ();
+ 
+ #ifdef HAVE_NATIVE_COMP
+--- src/lisp.h-ORIG	2025-02-19 03:31:36.000000000 +0900
++++ src/lisp.h	2025-02-25 17:45:38.974748000 +0900
+@@ -5517,6 +5517,10 @@
+ void syms_of_dbusbind (void);
+ #endif
+ 
++#ifdef HAVE_CANNA
++/* Defined in canna.c */
++extern void syms_of_canna (void);
++#endif
+ 
+ /* Defined in profiler.c.  */
+ extern bool profiler_memory_running;
+--- src/puresize.h-ORIG	2025-02-19 03:31:36.000000000 +0900
++++ src/puresize.h	2025-02-25 17:45:38.975963000 +0900
+@@ -63,7 +63,7 @@
+ #endif
+ #endif
+ 
+-#ifdef ENABLE_CHECKING
++#if defined(ENABLE_CHECKING) || defined(HAVE_CANNA)
+ /* ENABLE_CHECKING somehow increases the purespace used, probably because
+    it tends to cause some macro arguments to be evaluated twice.  This is
+    a bug, but it's difficult to track it down.  */
+--- configure-orig	2025-03-01 11:20:25.722965000 +0900
++++ configure	2025-03-01 11:20:28.910572000 +0900
+@@ -1861,6 +1861,9 @@
+ PKG_CONFIG
+ SYSTEM_TYPE
+ LIB_MATH
++CANNALIB
++CANNAOBJ
++CANNACFLAGS
+ LIBS_SYSTEM
+ C_SWITCH_SYSTEM
+ C_SWITCH_MACHINE
+@@ -2066,6 +2069,7 @@
+ enable_check_lisp_object_type
+ enable_link_time_optimization
+ enable_silent_rules
++with_canna
+ with_x
+ enable_cross_guesses
+ enable_acl
+@@ -2946,6 +2950,7 @@
+                           it; 'aot' will make the build process compile all
+                           the Lisp files in the tree natively ahead of time.
+                           (This will usually be quite slow.)
++  --with-canna            statically link canna.o
+   --with-x                use the X Window System
+   --without-libgmp        do not use the GNU Multiple Precision (GMP) library;
+                           this is the default on systems lacking libgmp.
+@@ -14373,6 +14378,30 @@
+ 
+ 
+ 
++### statically link canna.o
++
++# Check whether --with-canna was given.
++if test ${with_canna+y}
++then :
++  withval=$with_canna;
++else case e in #(
++  e)     with_canna=no ;;
++esac
++fi
++
++CANNACFLAGS=
++CANNAOBJ=
++CANNALIB=
++if test "${with_canna}" != no; then :
++  CANNACFLAGS="-DHAVE_CANNA"
++  CANNAOBJ=canna.o
++  CANNALIB="-lcanna"
++fi
++
++
++
++
++
+ ### Make sure subsequent tests use flags consistent with the build flags.
+ 
+ if test x"${OVERRIDE_CPPFLAGS}" != x; then
+@@ -56590,6 +56619,7 @@
+   Does Emacs have native lisp compiler?                   ${HAVE_NATIVE_COMP}
+   Does Emacs use version 2 of the X Input Extension?      ${HAVE_XINPUT2}
+   Does Emacs generate a smaller-size Japanese dictionary? ${with_small_ja_dic}
++  Does Emacs statically link Canna?                       ${with_canna}
+ "
+ 
+ if test -n "${EMACSDATA}"; then

@@ -1,3 +1,4 @@
+;; -*- lexical-binding:t -*-
 ;;; canna-leim.el --- Canna-related code for LEIM
 ;; Copyright (C) 1997  Stephen Turnbull <turnbull@sk.tsukuba.ac.jp>
 ;; Copyright (C) 1997 Free Software Foundation, Inc.
@@ -90,3 +91,7 @@
 (provide 'canna-leim)
 
 ;;; canna-leim.el ends here
+;; Local Variables:
+;; no-byte-compile: t
+;; no-update-auto-loads: t
+;; End:

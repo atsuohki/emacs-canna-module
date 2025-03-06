@@ -7,9 +7,11 @@ EMACS_FLAGS	= -batch -q -no-site-file -l CANNA-MK
 # directory where emacs source resides
 #SRC_TOP		= /usr/src/local/GNU/emacs/emacs-28.1
 # directory where emacs binaries built
-#EMACS_BLD_DIR	= /usr/src/local/GNU/emacs/emacs-28.1
+#EMACS_BLD_DIR	= /usr/src/local/GNU/emacs/emacs-30.1
 # version of emacs
-BLD_VERSION	= 28.1
+BLD_VERSION	= 30.1
+# os name
+OS_NAME		= amd64-freebsd14
 
 INC_DIRS	= -I.
 CC		= cc
@@ -23,8 +25,8 @@ CANNA_CFLAGS	= $(CANNA_DEFINES) -I$(CANNA_HEADERDIR)
 CANNA_LDFLAGS	= -L/usr/local/lib -lcanna
 
 # directory to install emacs support binaries
-#	typically `/usr/local/libexec/emacs/<BLD_VERSION>/<OS Name>'
-DL_INSTALLDIR	= /usr/local/libexec/emacs/$(BLD_VERSION)/amd64-freebsd12
+#	typically `/usr/local/libexec/emacs/<BLD_VERSION>/<OS_NAME>'
+DL_INSTALLDIR	= /usr/local/libexec/emacs/$(BLD_VERSION)/$(OS_NAME)
 
 # directory to install emacs site lisp codes
 #	typically `/usr/local/share/emacs/<BLD_VERSION>/site-lisp
